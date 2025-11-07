@@ -3,11 +3,10 @@ import matplotlib.pyplot as plt
 import os 
 import plotly.express as px
 
+#Put 
+
 cwd = os.getcwd()
 data_wd = os.path.join(cwd, 'Timedata', 'Raw_Life_Data.csv')
-
-life_dataframe = pd.read_csv(data_wd)
-life_dataframe['Activity type'].unique()
 
 renaming_dictionary = {
     'YouTube + computer' : 'Internet',
@@ -19,12 +18,26 @@ renaming_dictionary = {
     'Romantic partner' : 'Romantic Partner'
     }
 
-life_dataframe = life_dataframe.replace({'Activity type': renaming_dictionary})
+begin_date = '2023-02-01'
+end_date = '2023-12-31'
+
+def read_and_clean(file_path, cleaning_dictionary, begin_date = None, end_date= None): 
+    life_dataframe = pd.read_csv(file_path)
+    life_dataframe = life_dataframe.replace({'Activity type': cleaning_dictionary})
+    life_dataframe['From_dt'] = pd.to_datetime(life_dataframe['From'], format='%Y-%m-%d %H:%M:%S')
+    life_dataframe['To_dt'] = pd.to_datetime(life_dataframe['To'], format='%Y-%m-%d %H:%M:%S')
+    if end_date is None:
+        end_date = life_dataframe['From_dt'].max()
+    if begin_date is None:
+        begin_date = life_dataframe['From_dt'].min()
+    life_dataframe = life_dataframe[(life_dataframe['From_dt'] >= begin_date) & (life_dataframe['From_dt'] <= end_date)]
+    return life_dataframe
+
+life_dataframe = read_and_clean(data_wd,renaming_dictionary, begin_date, end_date)
 
 
 #might need to fix bc timestamp not datetime
-life_dataframe['From_dt'] = pd.to_datetime(life_dataframe['From'], format='%Y-%m-%d %H:%M:%S')
-life_dataframe['To_dt'] = pd.to_datetime(life_dataframe['To'], format='%Y-%m-%d %H:%M:%S')
+
 
 duplicate = life_dataframe[life_dataframe['From_dt'].dt.date != life_dataframe['To_dt'].dt.date].copy()
 duplicate_midnight = life_dataframe[life_dataframe['From_dt'].dt.date != life_dataframe['To_dt'].dt.date].copy()
