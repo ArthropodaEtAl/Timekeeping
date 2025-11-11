@@ -37,8 +37,8 @@ life_dataframe = read_and_clean(data_wd,renaming_dictionary, begin_date, end_dat
 
 
 #might need to fix bc timestamp not datetime
-
-
+# Graph by hour of the day
+#%%
 duplicate = life_dataframe[life_dataframe['From_dt'].dt.date != life_dataframe['To_dt'].dt.date].copy()
 duplicate_midnight = life_dataframe[life_dataframe['From_dt'].dt.date != life_dataframe['To_dt'].dt.date].copy()
 duplicate_morning = life_dataframe[life_dataframe['From_dt'].dt.date != life_dataframe['To_dt'].dt.date].copy()
@@ -108,10 +108,11 @@ clean_dataframe_bar = cleandataframe.groupby('Activity type')[hour_columns[-24:]
 clean_dataframe_bar= clean_dataframe_bar.apply(lambda x: x.apply(lambda y: y.total_seconds()/3600))
 clean_dataframe_bar=clean_dataframe_bar.transpose()
 fig_stacked, a_stacked = plt.subplots()
-clean_dataframe_bar.plot(ax = a_stacked, kind='bar', stacked = True, figsize = (6,6), legend=False, color =colors)
+clean_dataframe_bar.plot(ax = a_stacked, kind='bar', stacked = True, figsize = (10,6), legend=False, color =colors, ylabel="Hours")
 fig_stacked.legend(loc='upper center', ncol = 6, bbox_to_anchor=(0.5, 1.10))
 
+# percent stacked bar by day
 
 # Graph by day of the week
 # by month
-# Graph by hour of the day
+
