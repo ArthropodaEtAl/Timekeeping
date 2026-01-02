@@ -1,3 +1,4 @@
+#%%
 import pandas as pd
 import matplotlib.pyplot as plt
 import os 
@@ -34,8 +35,64 @@ def read_and_clean(file_path, cleaning_dictionary, begin_date = None, end_date= 
     return life_dataframe
 
 life_dataframe = read_and_clean(data_wd,renaming_dictionary, begin_date, end_date)
+colors = {
+    'Piano': '#ff6c4a',
+    'Phone': '#000000',
+    'Internet': '#bdbdbd',
+    'Yoga': '#78ffff',
+    'Pets': '#3e2720',
+    'Walk': '#59c6df',
+    'Transport': '#c54167',
+    'Friends': '#d0030c',
+    'Read': '#8c7148',
+    'Write': '#a903fd',
+    'PhD': '#a58978',
+    'Chinese': '#06e872',
+    'Housework': '#8eb07a',
+    'Art': '#c91262',
+    'Career': '#5a5b60',
+    'Exercise': '#02bda4',
+    'Dnd': '#9467bd',
+    'Sleep': '#bcbd22',
+    'Chosing music': '#bcbd22',
+    'Job search': '#526e7b',
+    'Romantic Partner': '#fe01ff',
+    'Zone': '#ffaa06',
+}
+
+#%%
+#find some way to display totals for the year
+life_dataframe['Time_Amount'] = life_dataframe['To_dt'] - life_dataframe['From_dt']
+life_dataframe['Time_Amount'] = (life_dataframe['Time_Amount'].dt.total_seconds()/3600).round(2)
+year_total_series = life_dataframe.groupby(['Activity type'])['Time_Amount'].sum()
+fig_total, ax_total = plt.subplots()
+year_total_series.plot.bar(ax = ax_total,figsize = (10,6), grid=True, xticks=[], legend=False, ylabel="Percentage of Day", xlabel ="",  width=1.0, color = list(colors.values()))
 
 
+#%%
+#graph to get stacked bar chart by day for a year
+life_dataframe['Date'] = life_dataframe['From_dt'].dt.date
+life_dataframe['Time_Amount'] = life_dataframe['To_dt'] - life_dataframe['From_dt']
+week_dataframe = life_dataframe.groupby(['Date','Activity type'])['Time_Amount'].sum().unstack()
+
+pivot_df_percentage = week_dataframe.div(week_dataframe.sum(axis=1), axis=0) * 100
+fig_percentage, ax_percentage = plt.subplots()
+pivot_df_percentage.plot.bar(ax = ax_percentage,figsize = (10,6), stacked=True,
+                  grid=True, xticks=[], color =colors, legend=False, ylabel="Percentage of Day", xlabel ="",  width=1.0)
+
+fig_percentage.legend(loc='upper center', ncol = 6, bbox_to_anchor=(0.5, 1.10))
+
+#%% Graph to get percentage average time per week day
+life_dataframe['Weekday'] = life_dataframe['From_dt'].dt.dayofweek
+life_dataframe['Time_Amount'] = life_dataframe['To_dt'] - life_dataframe['From_dt']
+
+life_dataframe['Time_Amount'] = (life_dataframe['Time_Amount'].dt.total_seconds()/3600).round(2)
+week_dataframe = life_dataframe.groupby(['Weekday','Activity type'])['Time_Amount'].mean().unstack()
+
+fig_week, ax_week = plt.subplots()
+week_dataframe.plot.bar(ax = ax_week,figsize = (10,6), stacked=True, grid=True, legend=False,color =colors, ylabel="Average Time Spent per day", xlabel ="",  width=1.0)
+
+fig_week.legend(loc='upper center', ncol = 6, bbox_to_anchor=(0.5, 1.10))
 #might need to fix bc timestamp not datetime
 # Graph by hour of the day
 #%%
@@ -75,32 +132,6 @@ for i in range(24):
     maxac = pd.concat([a, c], axis=1).apply(max, axis=1)
     diff = (minbd - maxac).apply(lambda x: max(x, pd.Timedelta(0)))
     cleandataframe[f"hour{i}"] = diff
-
-
-colors = {
-    'Piano': '#ff6c4a',
-    'Phone': '#000000',
-    'Internet': '#bdbdbd',
-    'Yoga': '#78ffff',
-    'Pets': '#3e2720',
-    'Walk': '#59c6df',
-    'Transport': '#c54167',
-    'Friends': '#d0030c',
-    'Read': '#8c7148',
-    'Write': '#a903fd',
-    'PhD': '#a58978',
-    'Chinese': '#06e872',
-    'Housework': '#8eb07a',
-    'Art': '#c91262',
-    'Career': '#5a5b60',
-    'Exercise': '#02bda4',
-    'Dnd': '#9467bd',
-    'Sleep': '#bcbd22',
-    'Chosing music': '#bcbd22',
-    'Job search': '#526e7b',
-    'Romantic Partner': '#fe01ff',
-    'Zone': '#ffaa06',
-}
 
 hour_columns = cleandataframe.columns
 
