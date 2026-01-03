@@ -1,13 +1,15 @@
-#%%
+#%% Libraries
 import pandas as pd
 import matplotlib.pyplot as plt
 import os 
 import plotly.express as px
-
-#Put 
+import numpy as np
+from matplotlib.ticker import FormatStrFormatter
+#%%
+#functions to clean data
 
 cwd = os.getcwd()
-data_wd = os.path.join(cwd, 'Timedata', 'Raw_Life_Data.csv')
+data_wd = os.path.join(cwd, 'Timedata', 'Raw_Life_Data_2.csv')
 
 renaming_dictionary = {
     'YouTube + computer' : 'Internet',
@@ -19,22 +21,9 @@ renaming_dictionary = {
     'Romantic partner' : 'Romantic Partner'
     }
 
-begin_date = '2023-02-01'
-end_date = '2023-12-31'
+begin_date = '2025-01-01'
+end_date = '2025-12-31'
 
-def read_and_clean(file_path, cleaning_dictionary, begin_date = None, end_date= None): 
-    life_dataframe = pd.read_csv(file_path)
-    life_dataframe = life_dataframe.replace({'Activity type': cleaning_dictionary})
-    life_dataframe['From_dt'] = pd.to_datetime(life_dataframe['From'], format='%Y-%m-%d %H:%M:%S')
-    life_dataframe['To_dt'] = pd.to_datetime(life_dataframe['To'], format='%Y-%m-%d %H:%M:%S')
-    if end_date is None:
-        end_date = life_dataframe['From_dt'].max()
-    if begin_date is None:
-        begin_date = life_dataframe['From_dt'].min()
-    life_dataframe = life_dataframe[(life_dataframe['From_dt'] >= begin_date) & (life_dataframe['From_dt'] <= end_date)]
-    return life_dataframe
-
-life_dataframe = read_and_clean(data_wd,renaming_dictionary, begin_date, end_date)
 colors = {
     'Piano': '#ff6c4a',
     'Phone': '#000000',
@@ -60,13 +49,67 @@ colors = {
     'Zone': '#ffaa06',
 }
 
+
+def read_and_clean(file_path, cleaning_dictionary): 
+    """ 
+    
+    
+    
+    
+    """
+    clean_dataframe = pd.read_csv(file_path)
+    clean_dataframe = clean_dataframe.replace({'Activity type': cleaning_dictionary})
+    clean_dataframe['From_dt'] = pd.to_datetime(clean_dataframe['From'], format='%Y-%m-%d %H:%M:%S')
+    clean_dataframe['To_dt'] = pd.to_datetime(clean_dataframe['To'], format='%Y-%m-%d %H:%M:%S')
+    clean_dataframe['Time_Amount'] = clean_dataframe['To_dt'] - clean_dataframe['From_dt']
+    clean_dataframe['Time_Amount'] = (clean_dataframe['Time_Amount'].dt.total_seconds()/3600).round(2)
+    return clean_dataframe
+
+life_dataframe = read_and_clean(data_wd,renaming_dictionary)
+
+#%% This creates an intial graph that plots general trends. 
+
+def important_indicators(input_dataframe, indicator_number = 4):
+    input_dataframe['Year'] = input_dataframe['From_dt'].dt.year
+    year_df = input_dataframe.groupby(['Year', 'Activity type'])['Time_Amount'].sum().reset_index()
+    N = indicator_number
+    pick_headers = year_df.sort_values(by ='Time_Amount',ascending=False)
+    pick_headers = pick_headers .groupby(['Year']).head(N)
+    tracked_values = list(pick_headers['Activity type'].unique())
+    final_data = year_df[year_df['Activity type'].isin(tracked_values)]
+    final_data =final_data.pivot(index = 'Year', columns='Activity type',values= 'Time_Amount').fillna(0.0)
+    index_list_mpc=list(final_data.index )
+    fig_total, ax_total = plt.subplots()
+    final_data.plot(ax = ax_total, color= colors, legend= False, figsize=(10,6),ylabel= 'Hours (h)')
+    ax_total.xaxis.set_ticks(np.arange(min(index_list_mpc), max(index_list_mpc)+1, 1))
+    ax_total.xaxis.set_major_formatter(FormatStrFormatter('%d')) 
+    fig_total.legend(loc='upper center', ncol = 4, bbox_to_anchor=(0.5, 1))
+    return fig_total
+
+year_graph_maxes= important_indicators(life_dataframe,5)
+
+#%% 
+life_dataframe.corr()
+#%%
+
+def truncate_date(clean_dataframe, begin_date = None, end_date= None):
+    if end_date is None:
+        end_date = clean_dataframe['From_dt'].max()
+    if begin_date is None:
+        begin_date = clean_dataframe['From_dt'].min()
+    clean_dataframe = clean_dataframe[(clean_dataframe['From_dt'] >= begin_date) & (clean_dataframe['From_dt'] <= end_date)]
+    return clean_dataframe
+
+
 #%%
 #find some way to display totals for the year
-life_dataframe['Time_Amount'] = life_dataframe['To_dt'] - life_dataframe['From_dt']
-life_dataframe['Time_Amount'] = (life_dataframe['Time_Amount'].dt.total_seconds()/3600).round(2)
+
+
 year_total_series = life_dataframe.groupby(['Activity type'])['Time_Amount'].sum()
 fig_total, ax_total = plt.subplots()
 year_total_series.plot.bar(ax = ax_total,figsize = (10,6), grid=True, xticks=[], legend=False, ylabel="Percentage of Day", xlabel ="",  width=1.0, color = list(colors.values()))
+
+
 
 
 #%%
