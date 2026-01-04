@@ -26,29 +26,62 @@ renaming_dictionary = {
 begin_date = '2025-01-01'
 end_date = '2025-12-31'
 
+# colors = {
+#     'Piano': '#ff6c4a',
+#     'Phone': '#000000',
+#     'Computer': '#bdbdbd',
+#     'Yoga': '#78ffff',
+#     'Pets': '#3e2720',
+#     'Walk': '#59c6df',
+#     'Transport': '#c54167',
+#     'Friends': '#d0030c',
+#     'Read': '#8c7148',
+#     'Write': '#a903fd',
+#     'PhD': '#a58978',
+#     'Chinese': '#06e872',
+#     'Housework': '#8eb07a',
+#     'Art': '#c91262',
+#     'Career': '#5a5b60',
+#     'Exercise': '#02bda4',
+#     # 'Dnd': '#9467bd',
+#     # 'Sleep': '#bcbd22',
+#     # 'Chosing music': '#bcbd22',
+#     'Job search': '#526e7b',
+#     'Romantic Partner': '#fe01ff',
+#     'Zone': '#ffaa06',
+# }
+#https://colorbrewer2.org/#type=sequential&scheme=PuRd&n=6
 colors = {
-    'Piano': '#ff6c4a',
-    'Phone': '#000000',
+#hobbies - purple
+    'Piano': '#f2f0f7',
+    'Read': '#bcbddc',
+    'Write': '#9e9ac8',
+    'Chinese': '#54278f',
+#screentime - black
+    'Phone': '#252525',
     'Computer': '#bdbdbd',
-    'Yoga': '#78ffff',
-    'Pets': '#3e2720',
-    'Walk': '#59c6df',
-    'Transport': '#c54167',
-    'Friends': '#d0030c',
-    'Read': '#8c7148',
-    'Write': '#a903fd',
-    'PhD': '#a58978',
-    'Chinese': '#06e872',
-    'Housework': '#8eb07a',
-    'Art': '#c91262',
-    'Career': '#5a5b60',
-    'Exercise': '#02bda4',
-    'Dnd': '#9467bd',
+#active - green
+    'Yoga': '#edf8e9',
+    'Walk': '#a1d99b',
+    'Zone': '#31a354',
+    'Exercise': '#006d2c',
+#social - red
+    'Pets': '#fee5d9',
+    'Friends': '#fc9272',
+    'Art': '#de2d26',
+    'Romantic Partner': '#a50f15',
+#work - blue
+    'PhD': '#9ecae1',
+    'Job search': '#3182bd',
+    'Career': '#08519c',
+#necessities
+    'Transport': '#dd1c77',
+    'Housework': '#df65b0',
+
+   # 'Dnd': '#9467bd',
     # 'Sleep': '#bcbd22',
     # 'Chosing music': '#bcbd22',
-    'Job search': '#526e7b',
-    'Romantic Partner': '#fe01ff',
-    'Zone': '#ffaa06',
+    
 }
 
 delete_values = ['Chosing music', 'Sleep', 'Dnd']
