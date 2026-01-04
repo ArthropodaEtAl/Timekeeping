@@ -5,6 +5,7 @@ import os
 import plotly.express as px
 import numpy as np
 from matplotlib.ticker import FormatStrFormatter
+import seaborn as sns
 #%%
 #functions to clean data
 
@@ -12,13 +13,14 @@ cwd = os.getcwd()
 data_wd = os.path.join(cwd, 'Timedata', 'Raw_Life_Data_2.csv')
 
 renaming_dictionary = {
-    'YouTube + computer' : 'Internet',
+    'YouTube + computer' : 'Computer',
     'Petting cat' : 'Pets',
     'Art ' : 'Art',
     'Music playing' : 'Piano',
     'Work' : 'PhD',
     'Side job' : 'Career',
-    'Romantic partner' : 'Romantic Partner'
+    'Romantic partner' : 'Romantic Partner',
+    'Internet' : 'Computer'
     }
 
 begin_date = '2025-01-01'
@@ -27,7 +29,7 @@ end_date = '2025-12-31'
 colors = {
     'Piano': '#ff6c4a',
     'Phone': '#000000',
-    'Internet': '#bdbdbd',
+    'Computer': '#bdbdbd',
     'Yoga': '#78ffff',
     'Pets': '#3e2720',
     'Walk': '#59c6df',
@@ -42,30 +44,32 @@ colors = {
     'Career': '#5a5b60',
     'Exercise': '#02bda4',
     'Dnd': '#9467bd',
-    'Sleep': '#bcbd22',
-    'Chosing music': '#bcbd22',
+    # 'Sleep': '#bcbd22',
+    # 'Chosing music': '#bcbd22',
     'Job search': '#526e7b',
     'Romantic Partner': '#fe01ff',
     'Zone': '#ffaa06',
 }
 
+delete_values = ['Chosing music', 'Sleep', 'Dnd']
 
-def read_and_clean(file_path, cleaning_dictionary): 
+def read_and_clean(file_path, cleaning_dictionary, removal_values=[]): 
     """ 
-    
-    
-    
-    
+    This function reads the csv and cleans it
     """
     clean_dataframe = pd.read_csv(file_path)
     clean_dataframe = clean_dataframe.replace({'Activity type': cleaning_dictionary})
+    #Changes the data into a processable format in the dataframe.
     clean_dataframe['From_dt'] = pd.to_datetime(clean_dataframe['From'], format='%Y-%m-%d %H:%M:%S')
     clean_dataframe['To_dt'] = pd.to_datetime(clean_dataframe['To'], format='%Y-%m-%d %H:%M:%S')
     clean_dataframe['Time_Amount'] = clean_dataframe['To_dt'] - clean_dataframe['From_dt']
-    clean_dataframe['Time_Amount'] = (clean_dataframe['Time_Amount'].dt.total_seconds()/3600).round(2)
+    #converts the time amount to hours (h)
+    clean_dataframe['Time_Amount'] = (clean_dataframe['Time_Amount'].dt.total_seconds()/3600).round(2) 
+    #remove abandoned classifications
+    clean_dataframe = clean_dataframe[clean_dataframe['Activity type'].isin(removal_values)==False]
     return clean_dataframe
 
-life_dataframe = read_and_clean(data_wd,renaming_dictionary)
+life_dataframe = read_and_clean(data_wd,renaming_dictionary,delete_values)
 
 #%% This creates an intial graph that plots general trends. 
 
@@ -80,7 +84,7 @@ def important_indicators(input_dataframe, indicator_number = 4):
     final_data =final_data.pivot(index = 'Year', columns='Activity type',values= 'Time_Amount').fillna(0.0)
     index_list_mpc=list(final_data.index )
     fig_total, ax_total = plt.subplots()
-    final_data.plot(ax = ax_total, color= colors, legend= False, figsize=(10,6),ylabel= 'Hours (h)')
+    final_data.plot(ax = ax_total, color= colors, legend= False, figsize=(10,6),ylabel= 'Hours (h)', linewidth=5)
     ax_total.xaxis.set_ticks(np.arange(min(index_list_mpc), max(index_list_mpc)+1, 1))
     ax_total.xaxis.set_major_formatter(FormatStrFormatter('%d')) 
     fig_total.legend(loc='upper center', ncol = 4, bbox_to_anchor=(0.5, 1))
@@ -89,9 +93,16 @@ def important_indicators(input_dataframe, indicator_number = 4):
 year_graph_maxes= important_indicators(life_dataframe,5)
 
 #%% 
-life_dataframe.corr()
-#%%
+def correlation_fucntion(input_dataframe):
+    input_dataframe['Date'] = input_dataframe['From_dt'].dt.date
+    correlation_dataframe = input_dataframe.groupby(['Date','Activity type'])['Time_Amount'].sum().unstack().fillna(0)
+    fig_corr, ax_corr = plt.subplots()
+    ax_corr = sns.heatmap(correlation_dataframe.corr(), vmin=-1,vmax=1)
+    return fig_corr
 
+correlation_figure=correlation_fucntion(life_dataframe)
+
+#%%
 def truncate_date(clean_dataframe, begin_date = None, end_date= None):
     if end_date is None:
         end_date = clean_dataframe['From_dt'].max()
@@ -102,89 +113,86 @@ def truncate_date(clean_dataframe, begin_date = None, end_date= None):
 
 
 #%%
-#find some way to display totals for the year
+#graph to get stacked bar chart by day for a years
+def timelapse_onehundred(snapshot_dataframe):
+    snapshot_dataframe=life_dataframe
+    snapshot_dataframe['Date'] = snapshot_dataframe['From_dt'].dt.date
+    week_dataframe = snapshot_dataframe.groupby(['Date','Activity type'])['Time_Amount'].sum().unstack()
+    pivot_df_percentage = week_dataframe.div(week_dataframe.sum(axis=1), axis=0) * 100
 
-
-year_total_series = life_dataframe.groupby(['Activity type'])['Time_Amount'].sum()
-fig_total, ax_total = plt.subplots()
-year_total_series.plot.bar(ax = ax_total,figsize = (10,6), grid=True, xticks=[], legend=False, ylabel="Percentage of Day", xlabel ="",  width=1.0, color = list(colors.values()))
-
-
-
-
-#%%
-#graph to get stacked bar chart by day for a year
-life_dataframe['Date'] = life_dataframe['From_dt'].dt.date
-life_dataframe['Time_Amount'] = life_dataframe['To_dt'] - life_dataframe['From_dt']
-week_dataframe = life_dataframe.groupby(['Date','Activity type'])['Time_Amount'].sum().unstack()
-
-pivot_df_percentage = week_dataframe.div(week_dataframe.sum(axis=1), axis=0) * 100
-fig_percentage, ax_percentage = plt.subplots()
-pivot_df_percentage.plot.bar(ax = ax_percentage,figsize = (10,6), stacked=True,
-                  grid=True, xticks=[], color =colors, legend=False, ylabel="Percentage of Day", xlabel ="",  width=1.0)
-
-fig_percentage.legend(loc='upper center', ncol = 6, bbox_to_anchor=(0.5, 1.10))
-
+    fig_percentage, ax_percentage = plt.subplots()
+    pivot_df_percentage.plot.bar(ax = ax_percentage,figsize = (10,6), stacked=True,
+                    grid=True, xticks=[], color =colors, legend=False, ylabel="Percentage of Day", xlabel ="",  width=1.0, ylim=(0, 100))
+    fig_percentage.legend(loc='upper center', ncol = 6, bbox_to_anchor=(0.5, 1.10))
+    return fig_percentage
+timelapse_figure = timelapse_onehundred(life_dataframe)
 #%% Graph to get percentage average time per week day
-life_dataframe['Weekday'] = life_dataframe['From_dt'].dt.dayofweek
-life_dataframe['Time_Amount'] = life_dataframe['To_dt'] - life_dataframe['From_dt']
+def the_average_week(snapshot_dataframe):
 
-life_dataframe['Time_Amount'] = (life_dataframe['Time_Amount'].dt.total_seconds()/3600).round(2)
-week_dataframe = life_dataframe.groupby(['Weekday','Activity type'])['Time_Amount'].mean().unstack()
+    snapshot_dataframe['Weekday'] = snapshot_dataframe['From_dt'].dt.dayofweek
+    days_in_duration = (snapshot_dataframe['From_dt'].max()-snapshot_dataframe['From_dt'].min()).days
+    days_to_normalize = days_in_duration/7
+    snapshot_dataframe['Time_Amount_av'] = snapshot_dataframe['Time_Amount']/days_to_normalize
+    week_dataframe = snapshot_dataframe.groupby(['Weekday','Activity type'])['Time_Amount_av'].sum().unstack()
+    fig_week, ax_week = plt.subplots()
+    week_dataframe.plot.bar(ax = ax_week,figsize = (10,6), stacked=True, grid=True, legend=False,color =colors, ylabel="Average Time Spent per day", xlabel ="",  width=1.0)
 
-fig_week, ax_week = plt.subplots()
-week_dataframe.plot.bar(ax = ax_week,figsize = (10,6), stacked=True, grid=True, legend=False,color =colors, ylabel="Average Time Spent per day", xlabel ="",  width=1.0)
+    fig_week.legend(loc='upper center', ncol = 6, bbox_to_anchor=(0.5, 1.10))
+    return fig_week
 
-fig_week.legend(loc='upper center', ncol = 6, bbox_to_anchor=(0.5, 1.10))
+week_figure = the_average_week(life_dataframe)
 #might need to fix bc timestamp not datetime
 # Graph by hour of the day
 #%%
-duplicate = life_dataframe[life_dataframe['From_dt'].dt.date != life_dataframe['To_dt'].dt.date].copy()
-duplicate_midnight = life_dataframe[life_dataframe['From_dt'].dt.date != life_dataframe['To_dt'].dt.date].copy()
-duplicate_morning = life_dataframe[life_dataframe['From_dt'].dt.date != life_dataframe['To_dt'].dt.date].copy()
+def day_snapshot(snapshot_dataframe):
+    duplicate = snapshot_dataframe[snapshot_dataframe['From_dt'].dt.date != snapshot_dataframe['To_dt'].dt.date].copy()
+    duplicate_midnight = snapshot_dataframe[snapshot_dataframe['From_dt'].dt.date != snapshot_dataframe['To_dt'].dt.date].copy()
+    duplicate_morning = snapshot_dataframe[snapshot_dataframe['From_dt'].dt.date != snapshot_dataframe['To_dt'].dt.date].copy()
 
-duplicate_midnight['To_dt'] = duplicate_midnight.apply(lambda x: pd.Timestamp(x['To_dt']).replace(
-    year = x['From_dt'].date().year,
-    month = x['From_dt'].date().month, 
-    day = x['From_dt'].date().day, 
-    hour= 23, 
-    minute= 59, 
-    second = 59),
-    axis = 1)
-duplicate_morning['From_dt'] = duplicate_morning.apply(lambda x: pd.Timestamp(x['From_dt']).replace(
-    year = x['To_dt'].date().year,
-    month = x['To_dt'].date().month, 
-    day = x['To_dt'].date().day, 
-    hour= 0, 
-    minute= 0, 
-    second = 1),
-    axis = 1)
+    duplicate_midnight['To_dt'] = duplicate_midnight.apply(lambda x: pd.Timestamp(x['To_dt']).replace(
+        year = x['From_dt'].date().year,
+        month = x['From_dt'].date().month, 
+        day = x['From_dt'].date().day, 
+        hour= 23, 
+        minute= 59, 
+        second = 59),
+        axis = 1)
+    duplicate_morning['From_dt'] = duplicate_morning.apply(lambda x: pd.Timestamp(x['From_dt']).replace(
+        year = x['To_dt'].date().year,
+        month = x['To_dt'].date().month, 
+        day = x['To_dt'].date().day, 
+        hour= 0, 
+        minute= 0, 
+        second = 1),
+        axis = 1)
 
-lifedataframe =life_dataframe.drop(duplicate.index)
-cleandataframe = pd.concat([lifedataframe, duplicate_midnight, duplicate_morning])
+    lifedataframe =snapshot_dataframe.drop(duplicate.index)
+    cleandataframe = pd.concat([lifedataframe, duplicate_midnight, duplicate_morning])
 
-assert len(cleandataframe[cleandataframe['From_dt'].dt.date != cleandataframe['To_dt'].dt.date]) == 0, "BAD DAYS"
+    assert len(cleandataframe[cleandataframe['From_dt'].dt.date != cleandataframe['To_dt'].dt.date]) == 0, "BAD DAYS"
 
-# add hour columns
-for i in range(24):
-    a = cleandataframe['From_dt'].apply(lambda x: x.replace(hour=i, minute=0, second=0))
-    b = cleandataframe['From_dt'].apply(lambda x: x.replace(hour=i, minute=59, second=59))
-    c = cleandataframe['From_dt']
-    d = cleandataframe['To_dt']
-    minbd = pd.concat([b, d], axis=1).apply(min, axis=1)
-    maxac = pd.concat([a, c], axis=1).apply(max, axis=1)
-    diff = (minbd - maxac).apply(lambda x: max(x, pd.Timedelta(0)))
-    cleandataframe[f"hour{i}"] = diff
+    # add hour columns
+    for i in range(24):
+        a = cleandataframe['From_dt'].apply(lambda x: x.replace(hour=i, minute=0, second=0))
+        b = cleandataframe['From_dt'].apply(lambda x: x.replace(hour=i, minute=59, second=59))
+        c = cleandataframe['From_dt']
+        d = cleandataframe['To_dt']
+        minbd = pd.concat([b, d], axis=1).apply(min, axis=1)
+        maxac = pd.concat([a, c], axis=1).apply(max, axis=1)
+        diff = (minbd - maxac).apply(lambda x: max(x, pd.Timedelta(0)))
+        cleandataframe[f"hour{i}"] = diff
 
-hour_columns = cleandataframe.columns
+    hour_columns = cleandataframe.columns
 
-clean_dataframe_bar = cleandataframe.groupby('Activity type')[hour_columns[-24:]].sum()
-clean_dataframe_bar= clean_dataframe_bar.apply(lambda x: x.apply(lambda y: y.total_seconds()/3600))
-clean_dataframe_bar=clean_dataframe_bar.transpose()
-fig_stacked, a_stacked = plt.subplots()
-clean_dataframe_bar.plot(ax = a_stacked, kind='bar', stacked = True, figsize = (10,6), legend=False, color =colors, ylabel="Hours")
-fig_stacked.legend(loc='upper center', ncol = 6, bbox_to_anchor=(0.5, 1.10))
+    clean_dataframe_bar = cleandataframe.groupby('Activity type')[hour_columns[-24:]].sum()
+    clean_dataframe_bar= clean_dataframe_bar.apply(lambda x: x.apply(lambda y: y.total_seconds()/3600))
+    clean_dataframe_bar=clean_dataframe_bar.transpose()
+    fig_stacked, a_stacked = plt.subplots()
+    clean_dataframe_bar.plot(ax = a_stacked, kind='bar', stacked = True, figsize = (10,6), legend=False, color =colors, ylabel="Hours")
+    fig_stacked.legend(loc='upper center', ncol = 6, bbox_to_anchor=(0.5, 1.10))
+    return fig_stacked
 
+day_fig = day_snapshot(life_dataframe)
 # percent stacked bar by day
 
 # Graph by day of the week
