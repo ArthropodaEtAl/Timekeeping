@@ -18,13 +18,13 @@ renaming_dictionary = {
     'Art ' : 'Art',
     'Music playing' : 'Piano',
     'Work' : 'PhD',
-    'Side job' : 'Career',
+    'Side job' : 'Industry',
     'Romantic partner' : 'Romantic Partner',
     'Internet' : 'Computer'
     }
 
 begin_date = '2025-01-01'
-end_date = '2025-12-31'
+end_date = '2024-12-31'
 
 # colors = {
 #     'Piano': '#ff6c4a',
@@ -73,7 +73,7 @@ colors = {
 #work - blue
     'PhD': '#9ecae1',
     'Job search': '#3182bd',
-    'Career': '#08519c',
+    'Industry': '#08519c',
 #necessities
     'Transport': '#dd1c77',
     'Housework': '#df65b0',
@@ -117,13 +117,13 @@ def important_indicators(input_dataframe, indicator_number = 4):
     final_data =final_data.pivot(index = 'Year', columns='Activity type',values= 'Time_Amount').fillna(0.0)
     index_list_mpc=list(final_data.index )
     fig_total, ax_total = plt.subplots()
-    final_data.plot(ax = ax_total, color= colors, legend= False, figsize=(10,6),ylabel= 'Hours (h)', linewidth=5)
+    final_data.plot(ax = ax_total, color= colors, legend= False, figsize=(5,3),ylabel= 'Hours (h)', linewidth=5)
     ax_total.xaxis.set_ticks(np.arange(min(index_list_mpc), max(index_list_mpc)+1, 1))
     ax_total.xaxis.set_major_formatter(FormatStrFormatter('%d')) 
-    fig_total.legend(loc='upper center', ncol = 4, bbox_to_anchor=(0.5, 1))
+    fig_total.legend(loc='upper center', ncol = 4, bbox_to_anchor=(0.5, 1.15))
     return fig_total
 
-year_graph_maxes= important_indicators(life_dataframe,5)
+# year_graph_maxes= important_indicators(life_dataframe,5)
 
 #%% 
 def correlation_fucntion(input_dataframe):
@@ -133,32 +133,36 @@ def correlation_fucntion(input_dataframe):
     ax_corr = sns.heatmap(correlation_dataframe.corr(), vmin=-1,vmax=1)
     return fig_corr
 
-correlation_figure=correlation_fucntion(life_dataframe)
+# correlation_figure=correlation_fucntion(life_dataframe)
 
 #%%
+
 def truncate_date(clean_dataframe, begin_date = None, end_date= None):
+    # clean_dataframe= life_dataframe
+    # begin_date = None
+    # end_date ='2024-12-31'
     if end_date is None:
         end_date = clean_dataframe['From_dt'].max()
     if begin_date is None:
         begin_date = clean_dataframe['From_dt'].min()
-    clean_dataframe = clean_dataframe[(clean_dataframe['From_dt'] >= begin_date) & (clean_dataframe['From_dt'] <= end_date)]
+    clean_dataframe = clean_dataframe[(clean_dataframe['From_dt'] >= begin_date) & (clean_dataframe['From_dt'] <= end_date)].copy()
     return clean_dataframe
 
+# sample_df = truncate_date(life_dataframe, None, end_date)
 
 #%%
 #graph to get stacked bar chart by day for a years
 def timelapse_onehundred(snapshot_dataframe):
-    snapshot_dataframe=life_dataframe
     snapshot_dataframe['Date'] = snapshot_dataframe['From_dt'].dt.date
     week_dataframe = snapshot_dataframe.groupby(['Date','Activity type'])['Time_Amount'].sum().unstack()
     pivot_df_percentage = week_dataframe.div(week_dataframe.sum(axis=1), axis=0) * 100
 
     fig_percentage, ax_percentage = plt.subplots()
-    pivot_df_percentage.plot.bar(ax = ax_percentage,figsize = (10,6), stacked=True,
+    pivot_df_percentage.plot.bar(ax = ax_percentage,figsize = (5,3), stacked=True,
                     grid=True, xticks=[], color =colors, legend=False, ylabel="Percentage of Day", xlabel ="",  width=1.0, ylim=(0, 100))
-    fig_percentage.legend(loc='upper center', ncol = 6, bbox_to_anchor=(0.5, 1.10))
+    fig_percentage.legend(loc='upper right', ncol = 2, bbox_to_anchor=(1.6, 0.9))
     return fig_percentage
-timelapse_figure = timelapse_onehundred(life_dataframe)
+# timelapse_figure = timelapse_onehundred(life_dataframe)
 #%% Graph to get percentage average time per week day
 def the_average_week(snapshot_dataframe):
 
@@ -168,12 +172,11 @@ def the_average_week(snapshot_dataframe):
     snapshot_dataframe['Time_Amount_av'] = snapshot_dataframe['Time_Amount']/days_to_normalize
     week_dataframe = snapshot_dataframe.groupby(['Weekday','Activity type'])['Time_Amount_av'].sum().unstack()
     fig_week, ax_week = plt.subplots()
-    week_dataframe.plot.bar(ax = ax_week,figsize = (10,6), stacked=True, grid=True, legend=False,color =colors, ylabel="Average Time Spent per day", xlabel ="",  width=1.0)
-
-    fig_week.legend(loc='upper center', ncol = 6, bbox_to_anchor=(0.5, 1.10))
+    week_dataframe.plot.bar(ax = ax_week,figsize = (5,3), stacked=True, grid=True, legend=False,color =colors, ylabel="Average Time Spent per day", xlabel ="",  width=1.0)
+    fig_week.legend(loc='upper right', ncol = 2, bbox_to_anchor=(1.6, 0.9))
     return fig_week
 
-week_figure = the_average_week(life_dataframe)
+# week_figure = the_average_week(life_dataframe)
 #might need to fix bc timestamp not datetime
 # Graph by hour of the day
 #%%
@@ -221,13 +224,14 @@ def day_snapshot(snapshot_dataframe):
     clean_dataframe_bar= clean_dataframe_bar.apply(lambda x: x.apply(lambda y: y.total_seconds()/3600))
     clean_dataframe_bar=clean_dataframe_bar.transpose()
     fig_stacked, a_stacked = plt.subplots()
-    clean_dataframe_bar.plot(ax = a_stacked, kind='bar', stacked = True, figsize = (10,6), legend=False, color =colors, ylabel="Hours")
-    fig_stacked.legend(loc='upper center', ncol = 6, bbox_to_anchor=(0.5, 1.10))
+    clean_dataframe_bar.plot(ax = a_stacked, kind='bar', stacked = True, figsize = (5,3), legend=False, color =colors, ylabel="Hours")
+    fig_stacked.legend(loc='upper right', ncol = 2, bbox_to_anchor=(1.6, 0.9))
     return fig_stacked
-
-day_fig = day_snapshot(life_dataframe)
+# 
+# day_fig = day_snapshot(life_dataframe)
 # percent stacked bar by day
 
 # Graph by day of the week
 # by month
+
 
